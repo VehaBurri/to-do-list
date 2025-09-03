@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced To-Do List with Progress</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      width: 450px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    input, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    input[type="text"], input[type="datetime-local"] {
+      width: 100%;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+      width: 120px;
+      align-self: center;
+    }
+    button:hover {
+      background: #388e3c;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 15px;
+    }
+    li {
+      background: #f9f9f9;
+      margin: 12px 0;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      font-size: 14px;
+    }
+    li.completed {
+      text-decoration: line-through;
+      color: gray;
+      background: #e0e0e0;
+    }
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .task-actions {
+      display: flex;
+      gap: 5px;
+    }
+    .btn {
+      border: none;
+      padding: 5px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      color: white;
+    }
+    .edit-btn { background: #ffa726; }
+    .delete-btn { background: #e53935; }
+    .save-btn { background: #43a047; }
+    .deadline {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+    .task-progress {
+      margin-top: 8px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      background: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress {
+      height: 100%;
+      width: 0%;
+      background: #4CAF50;
+      transition: width 0.3s ease;
+    }
+    .progress-input {
+      width: 60px;
+      margin-top: 5px;
+      padding: 4px;
+      font-size: 12px;
+    }
+    .overall-progress {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📌 To-Do List</h2>
+    <div class="input-group">
+      <input type="text" id="taskInput" placeholder="Enter a task">
+      <input type="datetime-local" id="taskTime">
+      <button onclick="addTask()">Add Task</button>
+    </div>
+    <ul id="taskList"></ul>
+    <div class="overall-progress">
+      <p>Overall Progress:</p>
+      <div class="progress-bar">
+        <div class="progress" id="overallProgress"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function addTask() {
+      let taskInput = document.getElementById("taskInput");
+      let taskTime = document.getElementById("taskTime");
+      let taskText = taskInput.value.trim();
+      let deadline = taskTime.value;
+
+      if (taskText === "") return;
+
+      let li = document.createElement("li");
+      li.innerHTML = `
+        <div class="task-header">
+          <span>${taskText}</span>
+          <div class="task-actions">
+            <button class="btn edit-btn" onclick="editTask(this)">Edit</button>
+            <button class="btn delete-btn" onclick="deleteTask(this)">X</button>
+          </div>
+        </div>
+        ${deadline ? `<div class="deadline">⏰ Deadline: ${new Date(deadline).toLocaleString()}</div>` : ""}
+        <div class="task-progress">
+          <div class="progress-bar">
+            <div class="progress"></div>
+          </div>
+          <input type="number" class="progress-input" value="0" min="0" max="100" onchange="updateTaskProgress(this)">
+          %
+        </div>
+      `;
+
+      document.getElementById("taskList").appendChild(li);
+      taskInput.value = "";
+      taskTime.value = "";
+      updateOverallProgress();
+    }
+
+    function deleteTask(deleteBtn) {
+      deleteBtn.closest("li").remove();
+      updateOverallProgress();
+    }
+
+    function editTask(editBtn) {
+      let li = editBtn.closest("li");
+      let taskSpan = li.querySelector(".task-header span");
+      let oldText = taskSpan.textContent;
+
+      let input = document.createElement("input");
+      input.type = "text";
+      input.value = oldText;
+
+      li.querySelector(".task-header").innerHTML = `
+        <input type="text" value="${oldText}">
+        <div class="task-actions">
+          <button class="btn save-btn" onclick="saveTask(this)">Save</button>
+        </div>
+      `;
+    }
+
+    function saveTask(saveBtn) {
+      let li = saveBtn.closest("li");
+      let newText = li.querySelector("input").value;
+
+      li.querySelector(".task-header").innerHTML = `
+        <span>${newText}</span>
+        <div class="task-actions">
+          <button class="btn edit-btn" onclick="editTask(this)">Edit</button>
+          <button class="btn delete-btn" onclick="deleteTask(this)">X</button>
+        </div>
+      `;
+    }
+
+    function updateTaskProgress(input) {
+      let progressDiv = input.parentElement.querySelector(".progress");
+      let value = input.value;
+      if (value < 0) value = 0;
+      if (value > 100) value = 100;
+      progressDiv.style.width = value + "%";
+      updateOverallProgress();
+    }
+
+    function updateOverallProgress() {
+      let inputs = document.querySelectorAll(".progress-input");
+      let total = 0, count = 0;
+
+      inputs.forEach(input => {
+        total += parseInt(input.value) || 0;
+        count++;
+      });
+
+      let overall = count === 0 ? 0 : (total / count);
+      document.getElementById("overallProgress").style.width = overall + "%";
+    }
+  </script>
+</body>
+</html>
